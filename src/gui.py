@@ -75,7 +75,7 @@ class FileListView(tk.Frame):
 
     def on_add_files(self):
         filenames = askopenfilenames(initialdir='.', title = 'MuseScore-Dateien auswählen...',
-                                     filetypes =(('MuseScore files', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+                                     filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
         logger.info('Chosen files: {}'.format(filenames))
         if type(filenames) == tuple:
             for f in filenames:
@@ -106,8 +106,8 @@ class MainWindow(tk.Frame):
         self.pack()
         nb = tk.ttk.Notebook(root)
         nb.pack(padx=PADX, pady=PADY, fill=tk.BOTH, expand=True)
-        nb.add(self.create_convert_widgets(nb), text='Convert')
-        nb.add(self.create_merge_widgets(nb), text='Merge')
+        nb.add(self.create_convert_widgets(nb), text='Konvertieren...')
+        nb.add(self.create_merge_widgets(nb), text='Zusammenführen...')
         nb.enable_traversal()
 
     def create_convert_widgets(self, notebook):
@@ -115,10 +115,10 @@ class MainWindow(tk.Frame):
         self.convert_file_list = FileListView(frame)
         self.convert_file_list.pack(padx=0, pady=0, fill=tk.BOTH, expand=True)
         copy_titles = tk.IntVar()
-        copy_titles_checkbox = Checkbutton(frame, text='Copy titles', variable=copy_titles)
+        copy_titles_checkbox = Checkbutton(frame, text='Title kopieren', variable=copy_titles)
         copy_titles_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         remove_newline = tk.IntVar()
-        remove_newline_checkbox = Checkbutton(frame, text='Remove Newline', variable=remove_newline)
+        remove_newline_checkbox = Checkbutton(frame, text='Zeilenumbrüche entfernen', variable=remove_newline)
         remove_newline_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         convert_button = Button(frame, text='Convert', command=self.on_convert)
         convert_button.pack(padx=PADX, pady=PADY)
@@ -138,13 +138,12 @@ class MainWindow(tk.Frame):
 
     def on_choose_output_file(self):
         filename = asksaveasfilename(initialdir='.', title = 'Ausgabedatei auswählen...',
-                                     filetypes =(('MuseScore files', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+                                     filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
         if filename:
             self.output_file = filename
             self.output_file_label['text'] = filename
 
     def on_merge(self):
-        global logging
         if self.output_file:
             files = self.merge_file_list_view.get_file_list()
             if files:
@@ -158,7 +157,6 @@ class MainWindow(tk.Frame):
             messagebox.showerror('Keine Ausgabedatei ausgewählt', 'Es ist keine Ausgabedatei ausgewählt.')
 
     def on_convert(self):
-        global logging
         files = self.convert_file_list.get_file_list()
         if files:
             logging.info('Converting files: {}'.format(files))

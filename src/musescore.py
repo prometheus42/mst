@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import tempfile
+import copy
 
 
 class CapellaFile(object):
@@ -28,18 +29,27 @@ class MuseScoreFile(object):
             raise('invalid MuseScore file')
 
 
-    def get_staff_element(self):
-        staff = self.tree.getroot().findall('Score/Staff')
+    @staticmethod
+    def _get_staff_element_from_tree(tree):
+        staff = tree.getroot().findall('Score/Staff')
         if len(staff) != 1:
             raise MuseScoreException('too many staffs (main)')
         return staff[0]
 
-
-    def get_staff_content(self):
-        staff = self.tree.getroot().findall('Score/Staff')
+    @staticmethod
+    def _get_staff_content_from_tree(tree):
+        staff = tree.getroot().findall('Score/Staff')
         if len(staff) != 1:
             raise MuseScoreException('too many staffs (content)')
-        return self.tree.getroot().findall('Score/Staff/*')
+        return tree.getroot().findall('Score/Staff/*')
+
+
+    def get_staff_element(self):
+        return MuseScoreFile._get_staff_element_from_tree(self.tree)
+
+
+    def get_staff_content(self):
+        return MuseScoreFile._get_staff_content_from_tree(self.tree)
 
 
     def remove_clefs(self):
@@ -115,12 +125,13 @@ class MuseScoreFile(object):
         stafftext = self.tree.getroot().findall('Score/Staff/Measure/voice/StaffText/text/..')[0]
         voice = self.tree.getroot().findall('Score/Staff/Measure/voice/StaffText/text/../..')[0]
         voice.remove(stafftext)
-        
 
-    def write(self, outpath):
+
+    @staticmethod
+    def _write_tree(tree, outpath):
         _, ext = os.path.splitext(outpath)
         if ext == '.mscx':
-            self.tree.write(outpath, encoding='utf8')
+            tree.write(outpath, encoding='utf8')
         elif ext == '.mscz':
             with tempfile.TemporaryDirectory() as tempdir:
                 # determine paths
@@ -129,7 +140,7 @@ class MuseScoreFile(object):
                 containerpath = os.path.join(tempdir, 'META-INF/container.xml')
 
                 # save score
-                self.tree.write(scorepath, encoding='utf8')
+                tree.write(scorepath, encoding='utf8')
 
                 # create meta dir
                 os.mkdir(metapath)
@@ -148,6 +159,48 @@ class MuseScoreFile(object):
                             dst_path = os.path.join(root, file)
                             arc_path = os.path.relpath(dst_path, tempdir)
                             fd.write(dst_path, arc_path)
+
+
+    def write(self, outpath):
+        self._write_tree(self.tree, outpath)
+
+    def split(self, outdir):
+        '''Splits a file at VBOX-Elements into multiple files.'''
+        # copy tree as template for parts and remove content
+        template = copy.deepcopy(self.tree)
+        templatestaff = MuseScoreFile._get_staff_element_from_tree(template)
+        templatecontent = MuseScoreFile._get_staff_content_from_tree(template)
+        for e in templatecontent:
+            templatestaff.remove(e)
+
+        # extract part and create new copy of template
+        parts = []
+        content = self.get_staff_content()
+        for e in content:
+            if e.tag == 'VBox':
+                # extract title and create new part
+                titles = e.findall('''Text/style/[.='Subtitle']/../text''')
+                if len(titles) == 1:
+                    title = titles[0].text
+                elif len(titles) == 0:
+                    title = 'unknown_title_{}'.format(len(parts) + 1)
+                else:
+                    print('error')      # TODO
+                    title = 'unknown_title_{}'.format(len(parts) + 1)
+
+                parts.append({'title': title, 'elements': []})
+
+            # add element to current part
+            parts[-1]['elements'].append(e)
+
+        # output parts to different files
+        for part in parts:
+            part_tree = copy.deepcopy(template)
+            part_staff = MuseScoreFile._get_staff_element_from_tree(part_tree)
+            for e in part['elements']:
+                part_staff.append(e)
+
+            MuseScoreFile._write_tree(part_tree, os.path.join(outdir, part['title'] + '.mscz'))
 
 
     @staticmethod

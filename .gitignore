@@ -121,3 +121,8 @@ src/pythonpath/ics/*
 src/pythonpath/icalendar/*
 
 *.log
+
+*.mscx
+*.mscx~
+*.mscz
+*.mscz~

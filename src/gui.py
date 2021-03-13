@@ -7,6 +7,7 @@ import tkinter as tk
 import tkinter.messagebox as messagebox
 from tkinter.ttk import Button, Label, Separator, Checkbutton
 from tkinter.filedialog import askopenfilenames, asksaveasfilename
+import musescore
 
 
 logger = logging.getLogger('mst_gui')
@@ -114,12 +115,18 @@ class MainWindow(tk.Frame):
         frame = tk.Frame(notebook)
         self.convert_file_list = FileListView(frame)
         self.convert_file_list.pack(padx=0, pady=0, fill=tk.BOTH, expand=True)
-        copy_titles = tk.IntVar()
-        copy_titles_checkbox = Checkbutton(frame, text='Title kopieren', variable=copy_titles)
+        self.copy_titles = tk.IntVar()
+        copy_titles_checkbox = Checkbutton(frame, text='Title kopieren', variable=self.copy_titles)
         copy_titles_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
-        remove_newline = tk.IntVar()
-        remove_newline_checkbox = Checkbutton(frame, text='Zeilenumbrüche entfernen', variable=remove_newline)
+        self.remove_newline = tk.IntVar()
+        remove_newline_checkbox = Checkbutton(frame, text='Zeilenumbrüche entfernen', variable=self.remove_newline)
         remove_newline_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        self.remove_clefs = tk.IntVar()
+        remove_clefs_checkbox = Checkbutton(frame, text='Notenschlüssel entfernen', variable=self.remove_clefs)
+        remove_clefs_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        self.add_section_break = tk.IntVar()
+        add_section_break_checkbox = Checkbutton(frame, text='Abschnittsumrüche einfügen', variable=self.add_section_break)
+        add_section_break_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         convert_button = Button(frame, text='Convert', command=self.on_convert)
         convert_button.pack(padx=PADX, pady=PADY)
         return frame
@@ -148,7 +155,7 @@ class MainWindow(tk.Frame):
             files = self.merge_file_list_view.get_file_list()
             if files:
                 logging.info('Merging files ({}) to output file: {}.'.format(files, self.output_file))
-                # TODO: Handling merging of files.
+                musescore.merge_files(files, self.output_file)
             else:
                 logging.error('No input files for merging chosen!')
                 messagebox.showerror('Keine Eingabedateien ausgewählt', 'Es sind keine Eingabedateien ausgewählt.')
@@ -160,7 +167,11 @@ class MainWindow(tk.Frame):
         files = self.convert_file_list.get_file_list()
         if files:
             logging.info('Converting files: {}'.format(files))
-            # TODO: Handling converting of files.
+            musescore.convert_files(files,
+                                          copy_titles=self.copy_titles.get(),
+                                          remove_newlines=self.remove_newline.get(),
+                                          remove_clefs=self.remove_clefs.get(),
+                                          add_section_break=self.add_section_break.get())
         else:
             logging.error('No input files for converting chosen!')
             messagebox.showerror('Keine Eingabedateien ausgewählt', 'Es sind keine Eingabedateien ausgewählt.')

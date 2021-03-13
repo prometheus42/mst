@@ -6,7 +6,7 @@ import logging.handlers
 import tkinter as tk
 import tkinter.messagebox as messagebox
 from tkinter.ttk import Button, Label, Separator, Checkbutton
-from tkinter.filedialog import askopenfilenames, asksaveasfilename
+from tkinter.filedialog import askopenfilenames, asksaveasfilename, askopenfilename, askdirectory
 import musescore
 
 
@@ -125,6 +125,8 @@ class MainWindow(tk.Frame):
         super().__init__(master)
         self.master = master
         self.output_file = ''
+        self.split_input_file = ''
+        self.split_output_dir = ''
         master.title(APP_NAME)
         master.minsize(WIDTH, HEIGHT)
         # master.geometry('{}x{}'.format(WIDTH, HEIGHT))
@@ -136,6 +138,7 @@ class MainWindow(tk.Frame):
         nb.pack(padx=PADX, pady=PADY, fill=tk.BOTH, expand=True)
         nb.add(self.create_convert_widgets(nb), text='Konvertieren...')
         nb.add(self.create_merge_widgets(nb), text='Zusammenführen...')
+        nb.add(self.create_split_widgets(nb), text='Aufteilen...')
         nb.enable_traversal()
 
     def create_convert_widgets(self, notebook):
@@ -143,7 +146,7 @@ class MainWindow(tk.Frame):
         self.convert_file_list = FileListView(frame)
         self.convert_file_list.pack(padx=0, pady=0, fill=tk.BOTH, expand=True)
         self.copy_titles = tk.IntVar()
-        copy_titles_checkbox = Checkbutton(frame, text='Title kopieren', variable=self.copy_titles)
+        copy_titles_checkbox = Checkbutton(frame, text='Titel kopieren', variable=self.copy_titles)
         copy_titles_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         self.remove_newline = tk.IntVar()
         remove_newline_checkbox = Checkbutton(frame, text='Zeilenumbrüche entfernen', variable=self.remove_newline)
@@ -154,7 +157,7 @@ class MainWindow(tk.Frame):
         self.add_section_break = tk.IntVar()
         add_section_break_checkbox = Checkbutton(frame, text='Abschnittsumrüche einfügen', variable=self.add_section_break)
         add_section_break_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
-        convert_button = Button(frame, text='Convert', command=self.on_convert)
+        convert_button = Button(frame, text='Konvertieren...', command=self.on_convert)
         convert_button.pack(padx=PADX, pady=PADY)
         return frame
 
@@ -166,8 +169,22 @@ class MainWindow(tk.Frame):
         output_file_button.pack(padx=PADX, pady=PADY, anchor=tk.W)
         self.output_file_label = Label(frame, text='', font=('Courier', 10))
         self.output_file_label.pack(padx=PADX, pady=PADY, anchor=tk.W)
-        merge_button = Button(frame, text='Merge', command=self.on_merge)
+        merge_button = Button(frame, text='Zusammenführen...', command=self.on_merge)
         merge_button.pack(padx=PADX, pady=PADY)
+        return frame
+
+    def create_split_widgets(self, notebook):
+        frame = tk.Frame(notebook)
+        input_file_button = Button(frame, text='Eingabedatei auswählen...', command=self.on_choose_input_file)
+        input_file_button.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        self.split_input_file_label = Label(frame, text='', font=('Courier', 10))
+        self.split_input_file_label.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        split_output_directory_button = Button(frame, text='Ausgabeverzeichnis auswählen...', command=self.on_choose_output_dir)
+        split_output_directory_button.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        self.split_output_directory_label = Label(frame, text='', font=('Courier', 10))
+        self.split_output_directory_label.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        split_button = Button(frame, text='Aufteilen...', command=self.on_split)
+        split_button.pack(padx=PADX, pady=PADY)
         return frame
 
     def on_choose_output_file(self):
@@ -176,6 +193,19 @@ class MainWindow(tk.Frame):
         if filename:
             self.output_file = filename
             self.output_file_label['text'] = filename
+
+    def on_choose_input_file(self):
+        filename = askopenfilename(initialdir='.', title = 'Eingabedatei auswählen...',
+                                   filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+        if filename:
+            self.split_input_file = filename
+            self.split_input_file_label['text'] = filename
+
+    def on_choose_output_dir(self):
+        dir = askdirectory(initialdir='.', title = 'Ausgabeverzeichnis auswählen...')
+        if dir:
+            self.split_output_dir = dir
+            self.split_output_directory_label['text'] = dir
 
     def on_merge(self):
         if self.output_file:
@@ -202,6 +232,19 @@ class MainWindow(tk.Frame):
         else:
             logging.error('No input files for converting chosen!')
             messagebox.showerror('Keine Eingabedateien ausgewählt', 'Es sind keine Eingabedateien ausgewählt.')
+
+    def on_split(self):
+        if self.split_output_dir:
+            if self.split_input_file:
+                logging.info('Splitting file ({}) to output dir: {}.'.format(self.split_input_file, self.split_output_dir))
+                m = musescore.MuseScoreFile(self.split_input_file)
+                m.split(self.split_output_dir)
+            else:
+                logging.error('No input file for splitting chosen!')
+                messagebox.showerror('Kein Eingabedatei ausgewählt', 'Es ist kein Eingabedatei ausgewählt.')
+        else:
+            logging.error('No output directory chosen!')
+            messagebox.showerror('Kein Ausgabeverzeichnis ausgewählt', 'Es ist kein Ausgabeverzeichnis ausgewählt.')
 
 
 if __name__ == '__main__':

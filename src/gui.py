@@ -64,12 +64,16 @@ class FileListView(tk.Frame):
         self.listbox.pack(padx=PADX, pady=PADY, fill=tk.BOTH, expand=True)
         self.buttonframe = tk.Frame(self)
         add_button = Button(self.buttonframe, text='+', command=self.on_add_files)
-        add_button.pack(side=tk.LEFT, anchor=tk.W)
+        add_button.pack(side=tk.LEFT, padx=PADX, anchor=tk.W)
+        remove_button = Button(self.buttonframe, text='-', command=self.on_remove_file)
+        remove_button.pack(side=tk.LEFT, padx=PADX, anchor=tk.W)
+        up_button = Button(self.buttonframe, text='⏶', command=lambda: self.on_move_file(-1))
+        up_button.pack(side=tk.LEFT, padx=PADX, anchor=tk.W)
+        down_button = Button(self.buttonframe, text='⏷', command=lambda: self.on_move_file(1))
+        down_button.pack(side=tk.LEFT, padx=PADX, anchor=tk.W)
         remove_all_button = Button(self.buttonframe, text='x', command=self.on_remove_all_files)
-        remove_all_button.pack(side=tk.RIGHT, anchor=tk.E)
-        remove_button = Button(self.buttonframe, text='-', command=self.remove_files)
-        remove_button.pack(side=tk.LEFT, anchor=tk.W)
-        self.buttonframe.pack(padx=PADX, pady=PADY, fill=tk.X, expand=True)
+        remove_all_button.pack(side=tk.RIGHT, padx=PADX, anchor=tk.E)
+        self.buttonframe.pack(padx=PADX, pady=PADY, fill=tk.X)
 
     def on_remove_all_files(self):
         self.listbox.delete(0, tk.END)
@@ -84,10 +88,33 @@ class FileListView(tk.Frame):
         else:
             self.listbox.insert(tk.END, filenames)
 
-    def remove_files(self):
-        print(self.listbox.curselection)
-        for i in list(self.listbox.curselection()):
-            self.listbox.delete(i)
+    def on_remove_file(self):
+        selected_files = self.listbox.curselection()
+        if selected_files:
+            for i in selected_files:
+                self.listbox.delete(i)
+
+    def on_move_file(self, direction):
+        """
+        Moves item in Listbox up (direction = -1) or down (direction = 1).
+        """
+        # Source: https://stackoverflow.com/a/52763936
+        selected_files = self.listbox.curselection()
+        if not selected_files:
+            return
+        for f in selected_files:
+            if direction == -1 and f == 0:
+                continue
+            if direction == 1 and f == len(self.listbox.get(0, tk.END)) - 1:
+                continue
+            text = self.listbox.get(f)
+            self.listbox.delete(f)
+            self.listbox.insert(f + direction, text)
+            self.listbox.selection_set(f + direction)
+
+    def on_move_file_down(self):
+        if self.listbox.curselection:
+            pass
 
     def get_file_list(self):
         return self.listbox.get(0, tk.END)

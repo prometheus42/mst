@@ -1,10 +1,11 @@
-import zipfile
-import xml.etree.ElementTree as ET
+
 import os
 import sys
-import shutil
-import tempfile
 import copy
+import shutil
+import zipfile
+import tempfile
+import xml.etree.ElementTree as ET
 
 
 class CapellaFile(object):
@@ -75,7 +76,7 @@ class MuseScoreFile(object):
         sectionbreak = lastmeasure.find('''LayoutBreak/subtype/[.='section']''')
         if sectionbreak:
             return
-        
+
         # add section break
         layoutbreak = ET.SubElement(lastmeasure, 'LayoutBreak')
         subtype = ET.SubElement(layoutbreak, 'subtype')
@@ -164,6 +165,7 @@ class MuseScoreFile(object):
     def write(self, outpath):
         self._write_tree(self.tree, outpath)
 
+
     def split(self, outdir):
         '''Splits a file at VBOX-Elements into multiple files.'''
         # copy tree as template for parts and remove content
@@ -208,14 +210,20 @@ class MuseScoreFile(object):
         with zipfile.ZipFile(filepath, 'r') as archive:
             with archive.open('META-INF/container.xml') as fd:
                 parser = ET.XMLParser(encoding='utf-8')
-                rootfiles = ET.parse(fd, parser=parser).getroot().findall('rootfiles/rootfile')
+                try:
+                    rootfiles = ET.parse(fd, parser=parser).getroot().findall('rootfiles/rootfile')
+                except ET.ParseError as e:
+                    raise MuseScoreException('Could not parse file: {}'.format(e))
                 if len(rootfiles) != 1:
                     raise Exception('too many rootfiles')
                 rootfile = rootfiles[0].get('full-path')
-            
+
             with archive.open(rootfile) as fd:
                 parser = ET.XMLParser(encoding='utf-8')
-                tree = ET.parse(fd, parser=parser)
+                try:
+                    tree = ET.parse(fd, parser=parser)
+                except ET.ParseError as e:
+                    raise MuseScoreException('Could not parse file: {}'.format(e))
         return tree
 
 
@@ -223,7 +231,10 @@ class MuseScoreFile(object):
     def load_xml_file(filepath):
         with open(filepath, encoding='utf8') as fd:
             parser = ET.XMLParser(encoding='utf-8')
-            tree = ET.parse(fd, parser=parser)
+            try:
+                tree = ET.parse(fd, parser=parser)
+            except ET.ParseError as e:
+                raise MuseScoreException('Could not parse file: {}'.format(e))
         return tree
 
 
@@ -238,7 +249,7 @@ class MuseScoreFile(object):
         # remove content from mainfile
         for e in maincontent:
             mainstaff.remove(e)
-        
+
         # add content from contentfiles
         for f in contentfiles:
             if not isinstance(f, MuseScoreFile):

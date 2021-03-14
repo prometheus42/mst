@@ -81,7 +81,7 @@ class FileListView(tk.Frame):
 
     def on_add_files(self):
         filenames = askopenfilenames(initialdir='.', title = 'MuseScore-Dateien auswählen...',
-                                     filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+                                     filetypes =(('MuseScore-Dateien', '.mscx .mscz'),('Alle Dateien','*.*')))
         logger.info('Chosen files: {}'.format(filenames))
         if type(filenames) == tuple:
             for f in filenames:
@@ -190,16 +190,16 @@ class MainWindow(tk.Frame):
 
     def on_choose_output_file(self):
         filename = asksaveasfilename(initialdir='.', title = 'Ausgabedatei auswählen...',
-                                     filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+                                     filetypes =(('MuseScore-Dateien', '.mscx .mscz'),('Alle Dateien','*.*')))
         if filename:
             if not filename.endswith('.mscx') and not filename.endswith('.mscz'):
-                filename = filename + '.mscx'
+                filename = filename + '.mscz'
             self.output_file = filename
             self.output_file_label['text'] = filename
 
     def on_choose_input_file(self):
         filename = askopenfilename(initialdir='.', title = 'Eingabedatei auswählen...',
-                                   filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
+                                   filetypes =(('MuseScore-Dateien', '.mscx .mscz'),('Alle Dateien','*.*')))
         if filename:
             self.split_input_file = filename
             self.split_input_file_label['text'] = filename

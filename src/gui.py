@@ -229,6 +229,10 @@ class MainWindow(tk.Frame):
 
     def on_convert(self):
         files = self.convert_file_list.get_file_list()
+        if not any((self.copy_titles.get(), self.remove_newline.get(), self.remove_clefs.get(), self.add_section_break.get())):
+            logging.info('No options for converting chosen!')
+            messagebox.showinfo('Keine Konvertierungsoption ausgewählt', 'Es wurde keine Konvertierungsoption ausgewählt.')
+            return
         if files:
             logging.info('Converting files: {}'.format(files))
             try:

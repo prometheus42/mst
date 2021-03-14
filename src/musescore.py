@@ -250,10 +250,14 @@ class MuseScoreFile(object):
 
 
 def merge_files(files, output_file):
+    if len(files) == 0:
+        raise MuseScoreException('merge without failes not possible')
+
+    msf_main = MuseScoreFile(files[0])
     msf = []
     for f in files:
         msf.append(MuseScoreFile(f))
-    MuseScoreFile.merge_files(msf[0], msf, output_file)
+    MuseScoreFile.merge_files(msf_main, msf, output_file)
 
 
 def convert_files(files, copy_titles=False, remove_newlines=False, remove_clefs=False, add_section_break=False):

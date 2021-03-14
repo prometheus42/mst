@@ -5,8 +5,9 @@ import logging
 import logging.handlers
 import tkinter as tk
 import tkinter.messagebox as messagebox
-from tkinter.ttk import Button, Label, Separator, Checkbutton
+from tkinter.ttk import Button, Label, Checkbutton
 from tkinter.filedialog import askopenfilenames, asksaveasfilename, askopenfilename, askdirectory
+
 import musescore
 
 
@@ -155,7 +156,7 @@ class MainWindow(tk.Frame):
         remove_clefs_checkbox = Checkbutton(frame, text='Notenschlüssel entfernen', variable=self.remove_clefs)
         remove_clefs_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         self.add_section_break = tk.IntVar()
-        add_section_break_checkbox = Checkbutton(frame, text='Abschnittsumrüche einfügen', variable=self.add_section_break)
+        add_section_break_checkbox = Checkbutton(frame, text='Abschnittsumbrüche einfügen', variable=self.add_section_break)
         add_section_break_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         convert_button = Button(frame, text='Konvertieren...', command=self.on_convert)
         convert_button.pack(padx=PADX, pady=PADY)
@@ -191,6 +192,8 @@ class MainWindow(tk.Frame):
         filename = asksaveasfilename(initialdir='.', title = 'Ausgabedatei auswählen...',
                                      filetypes =(('MuseScore-Dateien', '*.mscx, *.mscz'),('Alle Dateien','*.*')))
         if filename:
+            if not filename.endswith('.mscx') and not filename.endswith('.mscz'):
+                filename = filename + '.mscx'
             self.output_file = filename
             self.output_file_label['text'] = filename
 
@@ -212,7 +215,11 @@ class MainWindow(tk.Frame):
             files = self.merge_file_list_view.get_file_list()
             if files:
                 logging.info('Merging files ({}) to output file: {}.'.format(files, self.output_file))
-                musescore.merge_files(files, self.output_file)
+                try:
+                    musescore.merge_files(files, self.output_file)
+                except musescore.MuseScoreException as e:
+                    logging.error('Error while merging files: {}'.format(e))
+                    messagebox.showerror('Fehler während des Zusammenführens', 'Es trat der folgende Fehler auf: {}'.format(e))
             else:
                 logging.error('No input files for merging chosen!')
                 messagebox.showerror('Keine Eingabedateien ausgewählt', 'Es sind keine Eingabedateien ausgewählt.')
@@ -224,11 +231,12 @@ class MainWindow(tk.Frame):
         files = self.convert_file_list.get_file_list()
         if files:
             logging.info('Converting files: {}'.format(files))
-            musescore.convert_files(files,
-                                          copy_titles=self.copy_titles.get(),
-                                          remove_newlines=self.remove_newline.get(),
-                                          remove_clefs=self.remove_clefs.get(),
-                                          add_section_break=self.add_section_break.get())
+            try:
+                musescore.convert_files(files, copy_titles=self.copy_titles.get(), remove_newlines=self.remove_newline.get(),
+                                        remove_clefs=self.remove_clefs.get(), add_section_break=self.add_section_break.get())
+            except musescore.MuseScoreException as e:
+                logging.error('Error while converting files: {}'.format(e))
+                messagebox.showerror('Fehler während des Konvertierens', 'Es trat der folgende Fehler auf: {}'.format(e))
         else:
             logging.error('No input files for converting chosen!')
             messagebox.showerror('Keine Eingabedateien ausgewählt', 'Es sind keine Eingabedateien ausgewählt.')
@@ -237,8 +245,12 @@ class MainWindow(tk.Frame):
         if self.split_output_dir:
             if self.split_input_file:
                 logging.info('Splitting file ({}) to output dir: {}.'.format(self.split_input_file, self.split_output_dir))
-                m = musescore.MuseScoreFile(self.split_input_file)
-                m.split(self.split_output_dir)
+                try:
+                    m = musescore.MuseScoreFile(self.split_input_file)
+                    m.split(self.split_output_dir)
+                except musescore.MuseScoreException as e:
+                    logging.error('Error while splitting files: {}'.format(e))
+                    messagebox.showerror('Fehler während des Aufteilens', 'Es trat der folgende Fehler auf: {}'.format(e))    
             else:
                 logging.error('No input file for splitting chosen!')
                 messagebox.showerror('Kein Eingabedatei ausgewählt', 'Es ist kein Eingabedatei ausgewählt.')

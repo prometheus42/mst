@@ -26,7 +26,7 @@ class MuseScoreFile(object):
         elif ext == '.mscz':
             self.tree = MuseScoreFile.load_zip_file(filepath)
         else:
-            raise('invalid MuseScore file')
+            raise MuseScoreException('invalid MuseScore file')
 
 
     @staticmethod

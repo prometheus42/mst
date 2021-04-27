@@ -99,11 +99,11 @@ class MuseScoreFile(object):
             print('set_text_as_title failed - too many vboxs')
             return
         elif len(vboxs) == 0:
-            staff = self.tree.getroot().findall('Score/Staff')
+            staff = self.tree.getroot().findall('Score/Staff')[0]
             vbox = ET.Element('VBox')
             height = ET.SubElement(vbox, 'height')
             height.text = '4'
-            staff.insert(vbox)
+            staff.insert(0, vbox)
         else:
             vbox = vboxs[0]
 
@@ -126,6 +126,24 @@ class MuseScoreFile(object):
         stafftext = self.tree.getroot().findall('Score/Staff/Measure/voice/StaffText/text/..')[0]
         voice = self.tree.getroot().findall('Score/Staff/Measure/voice/StaffText/text/../..')[0]
         voice.remove(stafftext)
+
+
+    def contains_time_sig(self):
+        time_sig = self.tree.getroot().findall('Score/Staff/Measure/voice/TimeSig')
+        if time_sig:
+            return True
+        else:
+            return False
+
+
+    def fix_key_sig(self):
+        time_sig = self.tree.getroot().findall('Score/Staff/Measure[1]/voice/KeySig')
+        if not time_sig:
+            voice_root = self.tree.getroot().findall('Score/Staff/Measure[1]/voice')[0]
+            key_sig = ET.Element('KeySig')
+            accidental = ET.SubElement(key_sig, 'accidental')
+            accidental.text = '0'
+            voice_root.insert(0, key_sig)
 
 
     @staticmethod
@@ -271,7 +289,7 @@ def merge_files(files, output_file):
     MuseScoreFile.merge_files(msf_main, msf, output_file)
 
 
-def convert_files(files, copy_titles=False, remove_newlines=False, remove_clefs=False, add_section_break=False):
+def convert_files(files, copy_titles=False, remove_newlines=False, remove_clefs=False, add_section_break=False, fix_key_sig=False):
     for f in files:
         # load file
         msf = MuseScoreFile(f)
@@ -285,6 +303,8 @@ def convert_files(files, copy_titles=False, remove_newlines=False, remove_clefs=
             msf.remove_clefs()
         if add_section_break:
             msf.add_sectionbreak()
+        if fix_key_sig:
+            msf.fix_key_sig()
 
         # create backup
         shutil.copy(f, f + '~')

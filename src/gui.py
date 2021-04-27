@@ -158,6 +158,9 @@ class MainWindow(tk.Frame):
         self.add_section_break = tk.IntVar()
         add_section_break_checkbox = Checkbutton(frame, text='Abschnittsumbrüche einfügen', variable=self.add_section_break)
         add_section_break_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
+        self.fix_key_sig = tk.IntVar()
+        fix_key_sig_checkbox = Checkbutton(frame, text='Tonart C-Dur fixen', variable=self.fix_key_sig)
+        fix_key_sig_checkbox.pack(padx=PADX, pady=PADY, anchor=tk.W)
         convert_button = Button(frame, text='Konvertieren...', command=self.on_convert)
         convert_button.pack(padx=PADX, pady=PADY)
         return frame
@@ -229,7 +232,7 @@ class MainWindow(tk.Frame):
 
     def on_convert(self):
         files = self.convert_file_list.get_file_list()
-        if not any((self.copy_titles.get(), self.remove_newline.get(), self.remove_clefs.get(), self.add_section_break.get())):
+        if not any((self.copy_titles.get(), self.remove_newline.get(), self.remove_clefs.get(), self.add_section_break.get(), self.fix_key_sig.get())):
             logging.info('No options for converting chosen!')
             messagebox.showinfo('Keine Konvertierungsoption ausgewählt', 'Es wurde keine Konvertierungsoption ausgewählt.')
             return
@@ -237,7 +240,7 @@ class MainWindow(tk.Frame):
             logging.info('Converting files: {}'.format(files))
             try:
                 musescore.convert_files(files, copy_titles=self.copy_titles.get(), remove_newlines=self.remove_newline.get(),
-                                        remove_clefs=self.remove_clefs.get(), add_section_break=self.add_section_break.get())
+                                        remove_clefs=self.remove_clefs.get(), add_section_break=self.add_section_break.get(), fix_key_sig=self.fix_key_sig.get())
             except musescore.MuseScoreException as e:
                 logging.error('Error while converting files: {}'.format(e))
                 messagebox.showerror('Fehler während des Konvertierens', 'Es trat der folgende Fehler auf: {}'.format(e))

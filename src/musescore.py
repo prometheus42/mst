@@ -2,6 +2,7 @@
 import os
 import sys
 import copy
+import uuid
 import shutil
 import zipfile
 import tempfile
@@ -220,7 +221,29 @@ class MuseScoreFile(object):
             for e in part['elements']:
                 part_staff.append(e)
 
-            MuseScoreFile._write_tree(part_tree, os.path.join(outdir, part['title'] + '.mscz'))
+            part_path = part['title']
+
+            # Sanitize path a bit (complete sanitation is complex, so lets do that another time)
+            part_path = part_path.replace('\n', ' ')
+            part_path = part_path.replace('\r', '')
+            part_path = part_path.replace('\t', ' ')
+            part_path = part_path.replace('<', '')
+            part_path = part_path.replace('>', '')
+            part_path = part_path.replace(':', '')
+            part_path = part_path.replace('"', '')
+            part_path = part_path.replace('/', '')
+            part_path = part_path.replace('\\', '')
+            part_path = part_path.replace('|', '')
+            part_path = part_path.replace('?', '')
+            part_path = part_path.replace('*', '')
+
+            part_path = os.path.join(outdir, part_path + '.mscz')
+
+            # Change path if file already exists, to avoid overwriting files
+            if os.path.isfile(part_path):
+                part_path = os.path.join(outdir, part['title'] + '-' + uuid.uuid4().hex[:8] + '.mscz')
+
+            MuseScoreFile._write_tree(part_tree, part_path)
 
 
     @staticmethod

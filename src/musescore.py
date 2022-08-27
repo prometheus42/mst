@@ -200,7 +200,7 @@ class MuseScoreFile(object):
         for e in content:
             if e.tag == 'VBox':
                 # extract title and create new part
-                titles = e.findall('''Text/style/[.='Subtitle']/../text''')
+                titles = e.findall('''Text/style/[.='Title']/../text''')
                 if len(titles) == 1:
                     title = titles[0].text
                 elif len(titles) == 0:

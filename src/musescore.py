@@ -253,11 +253,12 @@ class MuseScoreFile(object):
                 parser = ET.XMLParser(encoding='utf-8')
                 try:
                     rootfiles = ET.parse(fd, parser=parser).getroot().findall('rootfiles/rootfile')
+                    rootfiles = [f.get('full-path') for f in rootfiles if f.get('full-path').endswith('.mscx')]
                 except ET.ParseError as e:
                     raise MuseScoreException('Could not parse file: {}'.format(e))
                 if len(rootfiles) != 1:
                     raise Exception('too many rootfiles')
-                rootfile = rootfiles[0].get('full-path')
+                rootfile = rootfiles[0]
 
             with archive.open(rootfile) as fd:
                 parser = ET.XMLParser(encoding='utf-8')
